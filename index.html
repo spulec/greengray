@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Geocoding service</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 50px;
+        right: 5%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        line-height: 30px;
+        right-left: 10px;
+        width: 300px;
+      }
+      #D span{
+        background-color: blue;
+      }
+      #R span{
+        background-color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="floating-panel">
+      <div id='status'>How many will you guess right?</div>
+      <button id='D'>Democrat</button>
+      <button id='R'>Republican</button>
+    </div>
+    <div id="map"></div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+
+    <script>
+
+var COUNTIES = [
+    'ADAMS', 'ALLEN', 'ASHLAND', 'ASHTABULA', 'ATHENS', 'AUGLAIZE',
+    'BELMONT', 'BROWN', 'BUTLER', 'CARROLL', 'CHAMPAIGN', 'CLARK', 'CLERMONT',
+    'CLINTON', 'COLUMBIANA', 'COSHOCTON', 'CRAWFORD', 'CUYAHOGA', 'DARKE',
+    'DEFIANCE', 'DELAWARE', 'ERIE', 'FAIRFIELD', 'FAYETTE', 'FRANKLIN',
+    'FULTON', 'GALLIA', 'GEAUGA', 'GREENE', 'GUERNSEY', 'HAMILTON', 'HANCOCK',
+    'HARDIN', 'HARRISON', 'HENRY', 'HIGHLAND', 'HOCKING', 'HOLMES', 'HURON',
+    'JACKSON', 'JEFFERSON', 'KNOX', 'LAKE', 'LAWRENCE', 'LICKING', 'LOGAN',
+    'LORAIN', 'LUCAS', 'MADISON', 'MAHONING', 'MARION', 'MEDINA', 'MEIGS',
+    'MERCER', 'MIAMI', 'MONROE', 'MONTGOMERY', 'MORGAN', 'MORROW', 'MUSKINGUM',
+    'NOBLE', 'OTTAWA', 'PAULDING', 'PERRY', 'PICKAWAY', 'PIKE', 'PORTAGE',
+    'PREBLE', 'PUTNAM', 'RICHLAND', 'ROSS', 'SANDUSKY', 'SCIOTO', 'SENECA',
+    'SHELBY', 'STARK', 'SUMMIT', 'TRUMBULL', 'TUSCARAWAS', 'UNION', 'VANWERT',
+    'VINTON', 'WARREN', 'WASHINGTON', 'WAYNE', 'WILLIAMS', 'WOOD', 'WYANDOT'
+];
+var COUNTIES = ['MORGAN'];
+
+function randomFromArray(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+// var data = [
+
+//   "OH0016291000,01,10119,COPAS,GLADYS,MAYOLA,,10/02/1926,09/10/1962,ACTIVE,D,503  OAK ST ,   ,WEST UNION,OH,45693,,,,  503 OAK ST  ,   ,WEST UNION,OH,45693,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WEST UNION A,01ABA,10,90,14,TIFFIN TOWNSHIP,WEST UNION VILLAGE,,D,X,,X,,X,,X,D,X,,,,X,,,D,,,X,,,D,,X,,,,,,X,,,,X,D,,X,D,X,,,,X,D,X,,,X",
+//   "OH0016304096,01,22101,GROOMS,HELEN,L,,08/06/1942,10/05/1992,CONFIRMATION,R,260  SR 770  ,   ,SEAMAN,OH,45679,,,,  P.O. BOX 43  ,   ,SEAMAN,OH,45679,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,SEAMAN VILLAGE,01AAU,10,90,14,SCOTT TOWNSHIP,SEAMAN VILLAGE,,,,,,,,,,,,,,,,,,X,,,,,,,,X,,,,,,,,,,X,,,X,R,X,,,,,,,,,",
+//   "OH0016304612,01,24690,PRATER,JAMES,W,SR,05/30/1931,09/20/2004,CONFIRMATION,,3400  SUCK RUN RD ,   ,MANCHESTER,OH,45144,,,,  P.O. BOX 356  ,   ,MANCHESTER,OH,45144,,,,,,,,02,04,SOUTH CENTRAL OH EDUC SRV CTR,,,MANCHESTER LOCAL SD,,SPRIGG TOWNSHIP,01AAW,10,90,14,SPRIGG TOWNSHIP,,,,,,,,,,,,X,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,X,,,,,,,,,",
+//   "OH0016304643,01,16646,SPURLOCK,BILL,,,02/07/1940,03/18/1996,ACTIVE,D,3430  SUCK RUN RD ,   ,MANCHESTER,OH,45144,,,,  P.O. BOX 356  ,   ,MANCHESTER,OH,45144,,,,,,,,02,04,SOUTH CENTRAL OH EDUC SRV CTR,,,MANCHESTER LOCAL SD,,SPRIGG TOWNSHIP,01AAW,10,90,14,SPRIGG TOWNSHIP,,,,X,,X,,X,,X,D,X,,,,X,,D,D,,,X,,,D,,X,,,,,,X,D,,,X,,,X,D,X,,,,X,,X,,,X",
+//   "OH0016297683,01,14450,ROE,JAMES,ALLEN,,12/07/1956,10/04/1994,ACTIVE,R,1290  MOORES RD ,   ,SEAMAN,OH,45679,,,,  P.O. BOX 237  ,   ,SEAMAN,OH,45679,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WAYNE TOWNSHIP,01ABE,10,90,14,WAYNE TOWNSHIP,,,R,X,,X,,X,,X,,X,,,,,,R,X,,,,,,R,,X,,,,,,X,,,,X,,,,R,X,,,,,,X,,,X",
+//   "OH0016297494,01,6102,FROST,RANDALL,DEAN,,07/18/1958,02/03/1976,ACTIVE,,885  MENDENHALL RD ,   ,PEEBLES,OH,45660,,,,  P.O. BOX 310  ,   ,PEEBLES,OH,45660,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,MEIGS TOWNSHIP,01AAN,10,90,14,MEIGS TOWNSHIP,,,R,X,,X,,X,,X,,X,,,,X,,,,,,,,,,,X,,,,,,X,,,,X,,,X,,X,,,,,,,,,",
+//   "OH0016297621,01,13238,HARRISON,DAN,R,,12/18/1954,08/08/1982,ACTIVE,R,155  MOCKINGBIRD AVE ,   ,WINCHESTER,OH,45697,,,,  P.O. BOX 356  ,   ,WINCHESTER,OH,45697,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WINCHESTER VILLAGE,01ABH,10,90,14,WINCHESTER TOWNSHIP,WINCHESTER VILLAGE,,R,X,,X,,X,,X,,X,,,,X,,R,X,,,X,,,R,,X,,,,,,X,R,,,X,R,,X,R,X,,,,X,R,X,,,",
+//   "OH0016291185,01,7949,MILLER,PAULA,LYNN,,10/20/1964,04/21/1982,ACTIVE,R,265  BROADWAY ST ,   ,SEAMAN,OH,45679,,,,  P.O. BOX 49  ,   ,SEAMAN,OH,45679,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,SEAMAN VILLAGE,01AAU,10,90,14,SCOTT TOWNSHIP,SEAMAN VILLAGE,,R,X,,X,,X,,,R,X,,,,X,,R,X,,,X,,,R,,X,,,,,,X,R,,,X,,,X,R,X,,,,X,,X,,,X",
+//   "OH0016291475,01,8967,JONES,CONSTANCE,MARIE,,07/01/1956,10/05/1992,ACTIVE,,201  CABIN CREEK RD ,   ,MANCHESTER,OH,45144,,,,  P.O. BOX 256  ,   ,MANCHESTER,OH,45144,,,,,,,,02,04,SOUTH CENTRAL OH EDUC SRV CTR,,,MANCHESTER LOCAL SD,,SPRIGG TOWNSHIP,01AAW,10,90,14,SPRIGG TOWNSHIP,,,,X,,X,,X,,X,,X,,,,,,,X,,,,,,D,,X,,,,,,,,,,X,,,,,X,,,,,,,,,X",
+//   "OH0016305094,01,18521,JOHNSON,CHARLES,EDWARD,,02/24/1938,04/08/1998,ACTIVE,D,1580  TOM BROWN RD ,   ,WEST UNION,OH,45693,,,,  P.O. BOX 13  ,   ,WEST UNION,OH,45693,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,OLIVER TOWNSHIP,01AAS,10,90,14,OLIVER TOWNSHIP,,,R,X,,X,,X,,X,D,X,,,,X,,,D,,,X,,,D,,X,,,,,,X,D,,,X,,,X,D,X,,,,,D,X,,,X",
+//   "OH0016305451,01,2968,WEST,TERESA,KAY,,10/31/1965,10/04/1983,ACTIVE,R,6586  TRI-COUNTY RD ,   ,SEAMAN,OH,45679,,,,  P.O. BOX 412  ,   ,SEAMAN,OH,45679,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,SEAMAN VILLAGE,01AAU,10,90,14,SCOTT TOWNSHIP,SEAMAN VILLAGE,,R,X,,X,R,X,,X,R,X,,,,X,,R,X,,,X,,,R,,X,,,,,,X,R,,,X,R,,X,R,X,,,,X,,X,,,X",
+//   "OH0016305390,01,21536,GRIFFITH,KELLY,B,,11/12/1982,10/18/2001,CONFIRMATION,R,1919  TRI-COUNTY RD ,   ,WINCHESTER,OH,45697,,,,  P O BOX 51  ,   ,WINCHESTER,OH,45697,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WINCHESTER VILLAGE,01ABH,10,90,14,WINCHESTER TOWNSHIP,WINCHESTER VILLAGE,,,,,,,X,,,,X,,,,X,,R,X,,,,,,D,,X,,,,,,X,,,,X,D,,X,R,X,,,,,,,,,",
+//   "OH0016295655,01,16153,GARRETT,LOREN,C,,06/06/1953,11/24/1995,ACTIVE,R,212  JERICHO RD ,   ,WINCHESTER,OH,45697,,,,  P.O. BOX 277  ,   ,WINCHESTER,OH,45697,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WINCHESTER TOWNSHIP,01ABG,10,90,14,WINCHESTER TOWNSHIP,,,R,X,,,,X,,,,X,,,,,,,X,,,,,,R,,X,,,,,,X,R,,,X,R,,X,R,X,,,,X,R,X,,,X",
+//   "OH0016295665,01,16152,GARRETT,NORA,A,,11/25/1948,11/24/1995,ACTIVE,,212  JERICHO RD ,   ,WINCHESTER,OH,45697,,,,  P.O. BOX 277  ,   ,WINCHESTER,OH,45697,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WINCHESTER TOWNSHIP,01ABG,10,90,14,WINCHESTER TOWNSHIP,,,R,X,,,,,,,,X,,,,,,,X,,,,,,,,X,,,,,,,,,,X,,,X,,X,,,,X,,,,,",
+//   "OH0016296032,01,6233,LOCKHART,SHERIDAN,LEE,,02/22/1947,05/22/1989,ACTIVE,R,3001  LAWSHE RD ,   ,PEEBLES,OH,45660,,,,  P.O. BOX 435  ,   ,PEEBLES,OH,45660,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,MEIGS TOWNSHIP,01AAN,10,90,14,MEIGS TOWNSHIP,,,,,,,,,,,,X,,,,,,,X,,,X,,,,,X,,,,,,X,,,,X,,,X,R,X,,,,,,X,,,",
+//   "OH0016296413,01,13557,WALKER,RODNEY,PAUL,,08/28/1960,06/06/1993,ACTIVE,,1216  LOGANS LN ,   ,WEST UNION,OH,45693,,,,  P.O. BOX 295  ,   ,WEST UNION,OH,45693,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,TIFFIN WEST,01AAZ,10,90,14,TIFFIN TOWNSHIP,,,D,X,,X,,,,,,X,,,,X,,,X,,,,,,D,,X,,,,,,X,,,,,,,X,,X,,,,X,,X,,,X",
+//   "OH0016302214,01,13252,HITCHCOCK,BETTY,JO,,02/04/1921,09/29/1962,ACTIVE,R,18922  SR 136  ,   ,WINCHESTER,OH,45697,,,,  P.O. BOX 184  ,   ,WINCHESTER,OH,45697,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WINCHESTER VILLAGE,01ABH,10,90,14,WINCHESTER TOWNSHIP,WINCHESTER VILLAGE,,R,X,,X,R,X,,X,R,X,,,,X,,R,R,,,X,,,R,,X,,,,,,X,R,,,X,,,X,R,X,,,,X,R,X,,,",
+//   "OH0016302225,01,13179,NAYLOR,LISA,MARIE,,04/12/1961,07/12/1979,ACTIVE,R,19022  SR 136  ,   ,WINCHESTER,OH,45697,,,,  P.O. BOX 283  ,   ,WINCHESTER,OH,45697,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WINCHESTER VILLAGE,01ABH,10,90,14,WINCHESTER TOWNSHIP,WINCHESTER VILLAGE,,R,X,,X,,X,,X,R,X,,,,,,R,X,,,X,,,,,X,,,,,,X,R,,,X,R,,X,R,X,,,,X,,,,,X",
+//   "OH0016302238,01,13163,EDMISTEN,STEVEN,J,,06/18/1947,09/29/1970,ACTIVE,R,18827  SR 136  ,   ,WINCHESTER,OH,45697,,,,  P.O. BOX 204  ,   ,WINCHESTER,OH,45697,,,,,,,,02,04,SOUTHERN OHIO EDUC SRV CTR,,,ADAMS COUNTY/OH VALLEY LOCAL SD,,WINCHESTER VILLAGE,01ABH,10,90,14,WINCHESTER TOWNSHIP,WINCHESTER VILLAGE,,R,X,,,R,,,,R,X,,,,X,,R,X,,,X,,,R,,X,,,,,,X,R,,,X,R,,,R,X,,,,X,R,X,,,X",
+// ]
+var data = null;
+var BASE_URL = "https://s3.amazonaws.com/greengray/";
+
+function setupData(county) {
+  var county = randomFromArray(COUNTIES);
+
+  $.ajax({
+    url: BASE_URL + county + ".TXT",
+    success: function(resp) {
+      data = resp.split("\n");
+      data.shift(); // Remove header row
+      selectAddresses();
+      initMap();
+    }
+  });
+}
+setupData()
+
+var map = null;
+var geocoder = null;
+var markers = [];
+var round = 0;
+var party = "";
+var addresses = [];
+var TOTAL_ROUNDS = 10;
+var numCorrect = 0;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 18,
+    mapTypeId: google.maps.MapTypeId.SATELLITE
+  });
+  geocoder = new google.maps.Geocoder();
+  setupRound(round);
+}
+
+function clearMarkers() {
+  for (var i = 0; i < markers.length; i++) {
+    markers[i].setMap(null);
+  }
+}
+
+$(function() {
+  $("button")
+    .button()
+    .click(function( event ) {
+      event.preventDefault();
+      var prefix = "";
+      if ($(this)[0].id == party) {
+        numCorrect += 1;
+        prefix = "Right! ";
+      } else {
+        prefix = "Wrong! ";
+      }
+      round += 1;
+      $("#status").text(prefix + numCorrect + " out of " + round + " correct.");
+      $("button").hide();
+      setTimeout(setupRound, 1000, round);
+    });
+});
+
+
+function setupRound(round) {
+
+  if (round < TOTAL_ROUNDS) {
+    var round_data = addresses[round];
+    var address = round_data[0];
+    var round_party = round_data[1];
+    party = round_party;
+
+    geocoder.geocode({'address': address}, function(results, status) {
+      if (status === google.maps.GeocoderStatus.OK) {
+        clearMarkers();
+        map.setCenter(results[0].geometry.location);
+        var marker = new google.maps.Marker({
+          map: map,
+          position: results[0].geometry.location
+        });
+        markers.push(marker);
+        $("button").show();
+      } else {
+        console.log('Geocode was not successful for the following reason: ' + status);
+        addresses.splice(round, 1);
+        setupRound(round);
+      }
+    });
+  } else {
+    console.log("game done");
+    $("#status").text("Game over. You got " + numCorrect + " out of " + round + " correct.");
+  }
+}
+
+function selectAddresses() {
+  var found_count = 0;
+  while (true) {
+    var record = randomFromArray(data);
+
+    var party = record.split(",")[10];
+    if (party == 'R' || party == 'D') {
+      var address = record.split(",").slice(11, 15) + "";
+      var cleaned_address = address.replace(/,/g, '');
+      addresses.push([cleaned_address, party]);
+      found_count += 1;
+      console.log('adding record');
+    }
+    if (found_count == TOTAL_ROUNDS * 2) {  // Have extras in case geocoding fails for some
+      break;
+    }
+  }
+
+}
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDv5elUm4x47EMlO3FTH8DKV9lCCb6pg0o&signed_in=true"
+        async defer></script>
+  </body>
+</html>
