@@ -15,8 +15,8 @@
       }
       #floating-panel {
         position: absolute;
-        top: 50px;
-        right: 5%;
+        top: 30px;
+        right: 2%;
         z-index: 5;
         background-color: #fff;
         padding: 5px;
@@ -36,9 +36,10 @@
   </head>
   <body>
     <div id="floating-panel">
+      <button id='about-button'>About</button>
       <div id='status'>How many will you guess right?</div>
-      <button id='D'>Democrat</button>
-      <button id='R'>Republican</button>
+      <button class='vote-button' id='D'>Democrat</button>
+      <button class='vote-button' id='R'>Republican</button>
     </div>
     <div id="map"></div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
@@ -46,6 +47,23 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
 
     <script>
+
+$(function() {
+  $("#welcome-dialog").dialog();
+
+  $("#about-button")
+    .button({
+      icons: {
+        primary: "ui-icon-info"
+      },
+      text: false
+    })
+    .click(function( event ) {
+      console.log("clicked");
+      $("#about-dialog").dialog();
+    });
+});
+
 
 var COUNTIES = [
     'ADAMS', 'ALLEN', 'ASHLAND', 'ASHTABULA', 'ATHENS', 'AUGLAIZE',
@@ -98,7 +116,8 @@ var numCorrect = 0;
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 18,
-    mapTypeId: google.maps.MapTypeId.SATELLITE
+    mapTypeId: google.maps.MapTypeId.SATELLITE,
+    disableDefaultUI: true
   });
   geocoder = new google.maps.Geocoder();
   setupRound(round);
@@ -111,7 +130,7 @@ function clearMarkers() {
 }
 
 $(function() {
-  $("button")
+  $(".vote-button")
     .button()
     .click(function( event ) {
       event.preventDefault();
@@ -181,7 +200,16 @@ function selectAddresses() {
 }
 
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDv5elUm4x47EMlO3FTH8DKV9lCCb6pg0o&signed_in=true"
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDv5elUm4x47EMlO3FTH8DKV9lCCb6pg0o&signed_in=false"
         async defer></script>
+
+  <div id="welcome-dialog" title="Welcome">
+    <p>Welcome to GreenGray. Your goal is to guess the party of the reigstered voter at the marked address.</p>
+  </div>
+
+  <div id="about-dialog" title="About">
+    <p>About this site. I am steve.</p>
+  </div>
+
   </body>
 </html>
